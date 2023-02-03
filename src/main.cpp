@@ -257,7 +257,7 @@ void Normal_CD() {
       selectedMenu = MAIN;
     }
   }
-
+ 
   if (millis() - lastTime >= 1000 && !paused) {
     lastTime = millis();
     if (normalSeconds == 0) {
