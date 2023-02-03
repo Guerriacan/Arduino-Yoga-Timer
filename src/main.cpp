@@ -90,13 +90,15 @@ RotaryEncoder encoder(rotaryAPin, rotaryBPin, RotaryEncoder::LatchMode::TWO03);
 
 Bounce button = Bounce();
 
-enum menus {MAIN, NORMAL, CYCLES, SERIES, SETTINGS};
+enum menus {MAIN, NORMAL, NORMAL_CD, CYCLES, SERIES, SETTINGS};
 byte selectedMenu = MAIN;
 
 bool updateDisplay = true;
 
+static unsigned long lastTime = 0;
 
-// menu system
+int normalSeconds = 0;
+int normalMinutes = 0;
 
 
 
@@ -180,37 +182,28 @@ void Main() {
 
 
 void Normal() {
-  static int seconds;
-  static int minutes;
   String time;
 
-  if (minutes == 0) {
-    seconds = seconds + rotaryEncoder() * 5;
-    Serial.println(seconds);
-    if (seconds > 59) {
-      seconds = 0;
-      minutes = 1;
-    } else if (seconds < 0) {
-      seconds = 0;
+  if (normalMinutes == 0) {
+    normalSeconds = normalSeconds + rotaryEncoder() * 5;
+    Serial.println(normalSeconds);
+    if (normalSeconds > 59) {
+      normalSeconds = 0;
+      normalMinutes = 1;
+    } else if (normalSeconds < 0) {
+      normalSeconds = 0;
     }
   } else {
-    minutes = minutes + rotaryEncoder();
-    if (minutes > 60) {
-      minutes = 60;
-    } else if (minutes <= 0) {
-      seconds = 55;
-      minutes = 0;
+    normalMinutes = normalMinutes + rotaryEncoder();
+    if (normalMinutes > 60) {
+      normalMinutes = 60;
+    } else if (normalMinutes <= 0) {
+      normalSeconds = 55;
+      normalMinutes = 0;
     }
   }
   
-  time = String(minutes) + ":";
-  if (minutes < 10) {
-    time = "0" + time;
-  }
-  if (seconds < 10) {
-    time = time + "0";
-  }
-  time = time + String(seconds);
+  
   if (button.rose()) {
     while (button.read() == HIGH) {
       button.update();
@@ -219,10 +212,66 @@ void Normal() {
         break;
       }
     }
+    selectedMenu = NORMAL_CD;
   }
 
   updateDisplay = true;
   if (displayMenu()) {
+    time = String(normalMinutes) + ":";
+    if (normalMinutes < 10) {
+      time = "0" + time;
+    }
+    if (normalSeconds < 10) {
+      time = time + "0";
+    }
+    time = time + String(normalSeconds);
+
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor((SCREEN_WIDTH - 6 * 12) / 2, 0);
+    display.print("Normal");
+    display.setTextSize(3);
+    display.setCursor((SCREEN_WIDTH - 5 * 18) / 2, 20);
+    display.print(time);
+    display.display();
+  }
+}
+
+void Normal_CD() {
+  bool paused = false;
+  String time;
+
+  if (button.rose()) {
+    while (button.read() == HIGH) {
+      button.update();
+      if (button.currentDuration() > 1000) {
+        selectedMenu = MAIN;
+        break;
+      }
+    }
+    paused = !paused;
+  }
+
+  if (millis() - lastTime >= 1000 && !paused) {
+    lastTime = millis();
+    if (normalSeconds == 0) {
+      normalSeconds = 59;
+      normalMinutes = normalMinutes - 1;
+    } else {
+      normalSeconds = normalSeconds - 1;
+    }
+  }
+
+  if (displayMenu()) {
+    time = String(normalMinutes) + ":";
+    if (normalMinutes < 10) {
+      time = "0" + time;
+    }
+    if (normalSeconds < 10) {
+      time = time + "0";
+    }
+    time = time + String(normalSeconds);
+
     display.clearDisplay();
     display.setTextSize(2);
     display.setCursor((SCREEN_WIDTH - 6 * 12) / 2, 0);
@@ -242,6 +291,9 @@ void menu() {
     break;
   case NORMAL:
     Normal();
+    break;
+  case NORMAL_CD:
+    Normal_CD();
     break;
   case CYCLES:
         
