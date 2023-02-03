@@ -251,6 +251,12 @@ void Normal_CD() {
     }
     paused = !paused;
   }
+  if (normalSeconds == 0 && normalMinutes == 0) {
+    //bip bip ici
+    if (button.rose()) {
+      selectedMenu = MAIN;
+    }
+  }
 
   if (millis() - lastTime >= 1000 && !paused) {
     lastTime = millis();
