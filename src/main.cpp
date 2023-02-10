@@ -79,10 +79,11 @@ const unsigned char logo_image [] PROGMEM = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+#define buzzerPin 0
+
 #define buttonPin 1
 #define rotaryAPin 2
 #define rotaryBPin 3
-
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -251,7 +252,7 @@ void Normal_CD() {
     }
     paused = !paused;
   }
-  if (normalSeconds == 0 && normalMinutes == 0) {
+  while (normalSeconds == 0 && normalMinutes == 0) {
     //bip bip ici
     if (button.rose()) {
       selectedMenu = MAIN;
@@ -268,6 +269,7 @@ void Normal_CD() {
     }
   }
 
+  updateDisplay = true;
   if (displayMenu()) {
     time = String(normalMinutes) + ":";
     if (normalMinutes < 10) {
@@ -331,6 +333,10 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(rotaryAPin), rotaryTurned, CHANGE);
   attachInterrupt(digitalPinToInterrupt(rotaryBPin), rotaryTurned, CHANGE);
+
+  pinMode(buzzerPin, OUTPUT);
+  analogWriteResolution(10);
+  analogWrite(buzzerPin, 0);
 
   display.setTextColor(WHITE);
 }
