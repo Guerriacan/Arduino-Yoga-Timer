@@ -3,7 +3,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <RotaryEncoder.h>
-#include <Bounce2.h>
+#include <OneButton.h>
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -82,14 +82,14 @@ const unsigned char logo_image [] PROGMEM = {
 #define buzzerPin 0
 
 #define buttonPin 1
-#define rotaryAPin 2
-#define rotaryBPin 3
+#define rotaryAPin 3
+#define rotaryBPin 2
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-RotaryEncoder encoder(rotaryAPin, rotaryBPin, RotaryEncoder::LatchMode::TWO03);
+OneButton button = OneButton(buttonPin, true, true);
 
-Bounce button = Bounce();
+RotaryEncoder encoder(rotaryAPin, rotaryBPin, RotaryEncoder::LatchMode::TWO03);
 
 enum menus {MAIN, NORMAL, NORMAL_CD, CYCLES, SERIES, SETTINGS};
 byte selectedMenu = MAIN;
@@ -170,13 +170,6 @@ void Main() {
     selection = NBMENUS - 1;
   }
   if (button.rose()) {
-    while (button.read() == HIGH) {
-      button.update();
-      if (button.currentDuration() > 1000) {
-        selectedMenu = SETTINGS;
-        break;
-      }
-    }
     selectedMenu = selection + 1;
   }
 }
@@ -207,7 +200,7 @@ void Normal() {
   
   if (button.rose()) {
     while (button.read() == HIGH) {
-      button.update();
+      button.tick();
       if (button.currentDuration() > 1000) {
         selectedMenu = MAIN;
         break;
@@ -244,7 +237,7 @@ void Normal_CD() {
 
   if (button.rose()) {
     while (button.read() == HIGH) {
-      button.update();
+      button.tick();
       if (button.currentDuration() > 1000) {
         selectedMenu = MAIN;
         break;
@@ -253,9 +246,12 @@ void Normal_CD() {
     paused = !paused;
   }
   while (normalSeconds == 0 && normalMinutes == 0) {
-    //bip bip ici
+    button.tick();
+    digitalWrite(buzzerPin, HIGH);
     if (button.rose()) {
+      digitalWrite(buzzerPin, LOW);
       selectedMenu = MAIN;
+      break;
     }
   }
  
@@ -326,23 +322,21 @@ void setup() {
   display.clearDisplay();
   display.drawBitmap(0, 0, logo_image, 128, 64, 1);
   display.display();
-  delay(2000);
+  delay(1500);
 
-  button.attach(buttonPin, INPUT_PULLUP);
-  button.interval(25);
 
   attachInterrupt(digitalPinToInterrupt(rotaryAPin), rotaryTurned, CHANGE);
   attachInterrupt(digitalPinToInterrupt(rotaryBPin), rotaryTurned, CHANGE);
 
   pinMode(buzzerPin, OUTPUT);
-  analogWriteResolution(10);
-  analogWrite(buzzerPin, 0);
+  PORT->Group[g_APinDescription[0].ulPort].PINCFG[g_APinDescription[0].ulPin].bit.DRVSTR = 1;
+  
 
   display.setTextColor(WHITE);
 }
 
 void loop() {
   menu();
-  button.update();
+  button.tick();
   delay(10);
 }
