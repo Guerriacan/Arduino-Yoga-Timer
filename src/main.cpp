@@ -87,7 +87,7 @@ const unsigned char logo_image [] PROGMEM = {
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-OneButton button = OneButton(buttonPin, true, true);
+OneButton button(buttonPin, true, true);
 
 RotaryEncoder encoder(rotaryAPin, rotaryBPin, RotaryEncoder::LatchMode::TWO03);
 
@@ -101,7 +101,11 @@ static unsigned long lastTime = 0;
 int normalSeconds = 0;
 int normalMinutes = 0;
 
-
+void click() {}
+void doubleClick() {}
+void longPressStart() {}
+void longPress() {}
+void longPressStop() {}
 
 
 void rotaryTurned() {
@@ -324,9 +328,15 @@ void setup() {
   display.display();
   delay(1500);
 
-
   attachInterrupt(digitalPinToInterrupt(rotaryAPin), rotaryTurned, CHANGE);
   attachInterrupt(digitalPinToInterrupt(rotaryBPin), rotaryTurned, CHANGE);
+
+  button.attachClick(click);
+  button.attachDoubleClick(doubleClick);
+  button.attachLongPressStart(longPressStart);
+  button.attachDuringLongPress(longPress);
+  button.attachLongPressStop(longPressStop);
+
 
   pinMode(buzzerPin, OUTPUT);
   PORT->Group[g_APinDescription[0].ulPort].PINCFG[g_APinDescription[0].ulPin].bit.DRVSTR = 1;
